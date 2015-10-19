@@ -1,0 +1,7 @@
+name: VoteBar
+main: me.HeyAwesomePeople.VoteBar.VoteBar
+softdepends: [MVdWPlaceholderAPI, Votifier]
+version: 1.0.0
+commands:
+  votebar:
+    description: Command
