@@ -188,24 +188,24 @@ public class SuperPlayer {
     /* * Config Options * */
 
     public void saveUsername() {
-        plugin.config.set("data." + this.player.getUniqueId().toString() + ".username", this.player.getName());
-        plugin.saveConfig();
+        plugin.dataC.set("data." + this.player.getUniqueId().toString() + ".username", this.player.getName());
+        plugin.data.saveCustomConfig();
     }
 
     public void saveData() {
-        plugin.config.set("data." + this.player.getUniqueId().toString() + ".votes", this.voted);
-        plugin.config.set("data." + this.player.getUniqueId().toString() + ".lastPercent", this.oldPercent);
-        this.saveUsername();
+        plugin.dataC.set("data." + this.player.getUniqueId().toString() + ".votes", this.voted);
+        plugin.dataC.set("data." + this.player.getUniqueId().toString() + ".lastPercent", this.oldPercent);
+        plugin.data.saveCustomConfig();
     }
 
     public void loadData() {
-        if (!plugin.config.contains("data." + this.player.getUniqueId().toString() + ".votes")) {
+        if (!plugin.dataC.contains("data." + this.player.getUniqueId().toString() + ".votes")) {
             this.saveUsername();
             this.saveData();
-            plugin.saveConfig();
+            plugin.data.saveCustomConfig();
         }
-        this.voted = plugin.config.getStringList("data." + this.player.getUniqueId().toString() + ".votes");
-        this.oldPercent = plugin.config.getInt("data." + this.player.getUniqueId().toString() + ".lastPercent");
+        this.voted = plugin.dataC.getStringList("data." + this.player.getUniqueId().toString() + ".votes");
+        this.oldPercent = plugin.dataC.getInt("data." + this.player.getUniqueId().toString() + ".lastPercent");
     }
 
     public void remove() {

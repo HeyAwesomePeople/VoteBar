@@ -21,13 +21,18 @@ import java.util.UUID;
 public class VoteBar extends JavaPlugin implements CommandExecutor {
     public static VoteBar instance;
 
+    public DataConfig data;
+
     public HashMap<UUID, SuperPlayer> players = new HashMap<UUID, SuperPlayer>();
     private File configf = new File(this.getDataFolder() + File.separator + "config.yml");
     public FileConfiguration config = getConfig();
+    public FileConfiguration dataC = null;
 
     @Override
     public void onEnable() {
         instance = this;
+        data = new DataConfig();
+        dataC = data.getCustomConfig();
         getServer().getPluginManager().registerEvents(new me.HeyAwesomePeople.VoteBar.Listener(), this);
 
         if (Bukkit.getPluginManager().isPluginEnabled("MVdWPlaceholderAPI")) {
@@ -70,8 +75,9 @@ public class VoteBar extends JavaPlugin implements CommandExecutor {
             config.set("run.10.repeatingCommand.commands", new ArrayList<String>(cmds));
             config.set("run.10.singleCommand.gainedPercent", new ArrayList<String>(cmds));
             config.set("run.10.singleCommand.lostPercent", new ArrayList<String>(cmds));
-            config.set("data.0f91ede5-54ed-495c-aa8c-d87bf405d2bb.votes", new ArrayList<String>());
+            dataC.set("data.0f91ede5-54ed-495c-aa8c-d87bf405d2bb.votes", new ArrayList<String>());
             saveConfig();
+            data.saveCustomConfig();
         }
     }
 
@@ -93,7 +99,16 @@ public class VoteBar extends JavaPlugin implements CommandExecutor {
                 sender.sendMessage(ChatColor.AQUA + "/votebar add <player> <amount>");
                 sender.sendMessage(ChatColor.AQUA + "/votebar remove <player> <amount>");
                 sender.sendMessage(ChatColor.AQUA + "/votebar set <player> <amount>");
+                sender.sendMessage(ChatColor.AQUA + "/votebar reload");
             } else {
+                if (args.length == 1) {
+                    if (args[0].equalsIgnoreCase("reload")) {
+                        reloadConfig();
+                        this.config = getConfig();
+                        sender.sendMessage(ChatColor.GREEN + "VoteBar config reloaded!");
+                    }
+                    return false;
+                }
                 if (args.length < 3) {
                     sender.sendMessage(ChatColor.RED + "Not enough arguments.");
                     return false;
