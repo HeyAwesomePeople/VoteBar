@@ -10,6 +10,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -61,7 +62,15 @@ public class VoteBar extends JavaPlugin implements CommandExecutor {
                 }
             });
         }
-        //TODO variables {Bar} {Percent}
+
+        Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
+            public void run() {
+                for (SuperPlayer p : players.values()) {
+                    if (!p.getPlayer().isOnline()) continue;
+                    TagScoreboard.createScoreboard(p.getPlayer().getPlayer());
+                }
+            }
+        }, 10L, 3L);
 
         if (!configf.exists()) {
             List<String> cmds = new ArrayList<String>();
@@ -69,6 +78,9 @@ public class VoteBar extends JavaPlugin implements CommandExecutor {
 
             config.set("maxVotes", 10);
             config.set("depletionTime", 30);// minutes
+            config.set("voteSymbol", "I");
+            config.set("voteColor", "&3");
+            config.set("nonVoteColor", "&4");
             //TODO detect if this value is changed. If so, change all votes according to it
             config.set("run.10.repeatingCommand.interval", 100);// ticks
             config.set("run.10.repeatingCommand.chance", 50); // percentage

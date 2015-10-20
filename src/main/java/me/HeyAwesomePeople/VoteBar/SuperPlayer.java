@@ -41,16 +41,12 @@ public class SuperPlayer {
         updatePercentage();
         String fin = "";
         for (int i = 1; i <= plugin.config.getInt("maxVotes"); i++) {
-            if (i <= this.getVotes()) {
-                fin += "#";
-            } else {
-                fin += "#";
-            }
+            fin += plugin.config.getString("voteSymbol");
         }
 
         StringBuilder sb = new StringBuilder(fin);
-        sb.insert(0, "&3");
-        sb.insert(this.getVotes() + 2, "&4");
+        sb.insert(0, plugin.config.getString("voteColor"));
+        sb.insert(this.getVotes() + 2, plugin.config.getString("nonVoteColor"));
         return "" + sb.toString();
     }
 
@@ -113,7 +109,12 @@ public class SuperPlayer {
 
     /************* Editing Votes ****************/
 
+    public boolean canBeAdded(Integer i) {
+        return i + this.voted.size() > plugin.config.getInt("maxVotes");
+    }
+
     public void addVotes(Integer i) {
+        if (!canBeAdded(i)) return;
         cleanVotes();
         for (int r = 1; r <= i; r++) {
             if (voted.isEmpty()) {
@@ -150,6 +151,7 @@ public class SuperPlayer {
 
     public void setVotes(Integer i) {
         this.voted.clear();
+        if (!canBeAdded(i)) return;
         addVotes(i);
     }
 
