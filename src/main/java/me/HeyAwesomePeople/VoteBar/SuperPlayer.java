@@ -3,7 +3,8 @@ package me.HeyAwesomePeople.VoteBar;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
@@ -12,12 +13,12 @@ import java.util.concurrent.TimeUnit;
 public class SuperPlayer {
     private VoteBar plugin = VoteBar.instance;
 
-    private Player player = null;
+    private OfflinePlayer player = null;
     public List<String> voted = new ArrayList<String>();
     public Integer oldPercent = 0;
     public HashMap<Integer, BukkitTask> tasks = new HashMap<Integer, BukkitTask>();
 
-    public SuperPlayer(Player p) {
+    public SuperPlayer(OfflinePlayer p) {
         player = p;
         this.loadData();
         this.updatePercentage();
@@ -33,24 +34,33 @@ public class SuperPlayer {
         return (int) ((double) (this.getVotes() * 100.0f) / plugin.config.getInt("maxVotes"));
     }
 
+
     /*********** Placeholder Calls ************/
+
     public String getVoteHashes() {
+        updatePercentage();
         String fin = "";
         for (int i = 1; i <= plugin.config.getInt("maxVotes"); i++) {
             if (i <= this.getVotes()) {
-                fin += "&3#";
+                fin += "#";
             } else {
-                fin += "&4#";
+                fin += "#";
             }
         }
-        return fin;
+
+        StringBuilder sb = new StringBuilder(fin);
+        sb.insert(0, "&3");
+        sb.insert(this.getVotes() + 2, "&4");
+        return "" + sb.toString();
     }
 
     public String getVotePercentage() {
+        updatePercentage();
         return (double) (this.getVotes() * 100.0f) / plugin.config.getInt("maxVotes") + "%";
     }
 
     public String getVoteSlash() {
+        updatePercentage();
         return this.getVotes() + "/" + plugin.config.getInt("maxVotes") + "%";
     }
 
@@ -65,13 +75,11 @@ public class SuperPlayer {
             }
         }
         saveData();
-        updatePercentage();
     }
 
     public void updatePercentage() {
         int perc = getVoteDoublePercentage();
-        boolean increasing = false;
-        //TODO loop through the difference of the percents to find all config commands that work for it. SINGLETON
+        boolean increasing;
         increasing = perc > oldPercent;
         if (perc != oldPercent) {
             // Cancel any repeating tasks
@@ -79,14 +87,14 @@ public class SuperPlayer {
                 bt.cancel();
             }
             // Run singleton commands
-            for (int i = Math.max(oldPercent, perc); i <= Math.min(oldPercent, perc); i--) {
+            for (int i = Math.max(oldPercent, perc); i >= Math.min(oldPercent, perc); i--) {
                 if (plugin.config.contains("run." + i)) {
                     if (increasing) {
                         for (String s : plugin.config.getStringList("run." + perc + ".singleCommand.gainedPercent")) {
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), s.replace("%player", this.player.getName()));
                         }
                     } else {
-                        for (String s : plugin.config.getStringList("run." + perc + ".singleCommand.lostPercent")) {
+                        for (String s : plugin.config.getStringList("run." + oldPercent + ".singleCommand.lostPercent")) {
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), s.replace("%player", this.player.getName()));
                         }
                     }
@@ -94,11 +102,11 @@ public class SuperPlayer {
             }
             this.oldPercent = perc;
 
-            this.startRepeater(this.player, perc, increasing);
+            this.startRepeater(this.player, perc);
         } else {
             // Make sure repeating commands running
             if (!tasks.containsKey(perc)) {
-                this.startRepeater(this.player, perc, increasing);
+                this.startRepeater(this.player, perc);
             }
         }
     }
@@ -125,11 +133,9 @@ public class SuperPlayer {
 
     public void removeVotes(Integer i) {
         cleanVotes();
-        int loops = 1;
-        for (String l : new ArrayList<String>(voted)) {
-            if (loops > i) break;
+        for (int loops = 1; loops >= i; loops++) {
+            if (voted.isEmpty()) continue;
             voted.remove(voted.get(0));
-            loops++;
         }
         saveData();
     }
@@ -147,8 +153,8 @@ public class SuperPlayer {
         addVotes(i);
     }
 
-    public void startRepeater(final Player p, final Integer perc, final Boolean gained) {
-        long interval = 1;
+    public void startRepeater(final OfflinePlayer p, final Integer perc) {
+        long interval;
         if (plugin.config.contains("run." + perc + ".repeatingCommand")) {
             interval = plugin.config.getInt("run." + perc + ".repeatingCommand.interval");
         } else {
@@ -157,19 +163,12 @@ public class SuperPlayer {
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
             public void run() {
                 if (plugin.config.contains("run." + perc + ".repeatingCommand")) {
-                    //TODO test chance
                     if (!(plugin.config.getInt("run." + perc + ".repeatingCommand.chance") >= getRandomNumber(0, 100))) {
                         return;
                     }
-                    if (gained) {
-                        for (String s : plugin.config.getStringList("run." + perc + ".repeatingCommand.gainedPercent")) {
+                        for (String s : plugin.config.getStringList("run." + perc + ".repeatingCommand.commands")) {
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), s.replace("%player", p.getName()));
                         }
-                    } else {
-                        for (String s : plugin.config.getStringList("run." + perc + ".repeatingCommand.lostPercent")) {
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), s.replace("%player", p.getName()));
-                        }
-                    }
                 }
             }
         }, 5L, interval);
@@ -182,21 +181,21 @@ public class SuperPlayer {
         return r.nextInt(max-min) + min;
     }
 
-    public Player getPlayer() {
+    public OfflinePlayer getPlayer() {
         return this.player;
     }
 
     /* * Config Options * */
 
     public void saveUsername() {
-        plugin.config.set("data." + this.player.getUniqueId().toString() + ".votes", this.player.getName());
+        plugin.config.set("data." + this.player.getUniqueId().toString() + ".username", this.player.getName());
         plugin.saveConfig();
     }
 
     public void saveData() {
         plugin.config.set("data." + this.player.getUniqueId().toString() + ".votes", this.voted);
         plugin.config.set("data." + this.player.getUniqueId().toString() + ".lastPercent", this.oldPercent);
-        plugin.saveConfig();
+        this.saveUsername();
     }
 
     public void loadData() {
@@ -210,6 +209,10 @@ public class SuperPlayer {
     }
 
     public void remove() {
+        for (BukkitTask bt : tasks.values()) {
+            bt.cancel();
+        }
+        tasks.clear();
         plugin.players.remove(this.player.getUniqueId());
     }
 
